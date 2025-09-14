@@ -6,16 +6,12 @@ import { createClient } from "../../supabase/server";
 
 export const signUpAction = async (formData: FormData) => {
   const email = formData.get("email")?.toString();
-  const fullName = formData.get("full_name")?.toString() || '';
-  const address = formData.get("address")?.toString() || '';
+  const fullName = formData.get("full_name")?.toString() || "";
+  const address = formData.get("address")?.toString() || "";
   const supabase = await createClient();
 
   if (!email) {
-    return encodedRedirect(
-      "error",
-      "/sign-up",
-      "Email is required",
-    );
+    return encodedRedirect("error", "/sign-up", "Email is required");
   }
 
   // Send OTP for sign up
@@ -26,7 +22,7 @@ export const signUpAction = async (formData: FormData) => {
         full_name: fullName,
         address: address,
         email: email,
-      }
+      },
     },
   });
 
@@ -34,27 +30,30 @@ export const signUpAction = async (formData: FormData) => {
     return encodedRedirect("error", "/sign-up", error.message);
   }
 
-  return encodedRedirect(
-    "success",
-    "/sign-up",
-    "Please check your email for the verification code to complete your registration.",
-  );
+  return redirect(`/verify-otp?email=${encodeURIComponent(email)}&type=signup`);
 };
 
 export const verifyOtpAction = async (formData: FormData) => {
   const email = formData.get("email")?.toString();
   const token = formData.get("token")?.toString();
-  const type = formData.get("type")?.toString() as 'signup' | 'magiclink';
+  const type = formData.get("type")?.toString() as "signup" | "magiclink";
   const supabase = await createClient();
 
   if (!email || !token) {
-    return encodedRedirect("error", "/sign-in", "Email and verification code are required");
+    return encodedRedirect(
+      "error",
+      "/sign-in",
+      "Email and verification code are required",
+    );
   }
 
-  const { data: { user }, error } = await supabase.auth.verifyOtp({
+  const {
+    data: { user },
+    error,
+  } = await supabase.auth.verifyOtp({
     email,
     token,
-    type: type || 'magiclink',
+    type: type || "magiclink",
   });
 
   if (error) {
@@ -65,24 +64,22 @@ export const verifyOtpAction = async (formData: FormData) => {
     try {
       // Check if user already exists in our users table
       const { data: existingUser } = await supabase
-        .from('users')
-        .select('id')
-        .eq('id', user.id)
+        .from("users")
+        .select("id")
+        .eq("id", user.id)
         .single();
 
       if (!existingUser) {
         // Create user record if it doesn't exist
-        const { error: updateError } = await supabase
-          .from('users')
-          .insert({
-            id: user.id,
-            user_id: user.id,
-            name: user.user_metadata?.full_name || '',
-            email: user.email || '',
-            address: user.user_metadata?.address || '',
-            token_identifier: user.id,
-            created_at: new Date().toISOString()
-          });
+        const { error: updateError } = await supabase.from("users").insert({
+          id: user.id,
+          user_id: user.id,
+          name: user.user_metadata?.full_name || "",
+          email: user.email || "",
+          address: user.user_metadata?.address || "",
+          token_identifier: user.id,
+          created_at: new Date().toISOString(),
+        });
 
         if (updateError) {
           return encodedRedirect(
@@ -121,20 +118,16 @@ export const signInAction = async (formData: FormData) => {
     return encodedRedirect("error", "/sign-in", error.message);
   }
 
-  return encodedRedirect(
-    "success",
-    "/sign-in",
-    "Please check your email for the verification code.",
-  );
+  return redirect(`/verify-otp?email=${encodeURIComponent(email)}&type=magiclink`);
 };
 
 export const signInWithGoogleAction = async () => {
   const supabase = await createClient();
-  
+
   const { data, error } = await supabase.auth.signInWithOAuth({
-    provider: 'google',
+    provider: "google",
     options: {
-      redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/auth/callback`,
+      redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"}/auth/callback`,
     },
   });
 
@@ -220,14 +213,56 @@ export const signOutAction = async () => {
   return redirect("/sign-in");
 };
 
+export const signInWithPasswordAction = async (formData: FormData) => {
+  const email = formData.get("email") as string;
+  const password = formData.get("password") as string;
+  const supabase = await createClient();
+
+  const { error } = await supabase.auth.signInWithPassword({
+    email,
+    password,
+  });
+
+  if (error) {
+    return encodedRedirect("error", "/sign-in", "Could not authenticate user");
+  }
+
+  return redirect("/dashboard");
+};
+
+export const signUpWithPasswordAction = async (formData: FormData) => {
+  const email = formData.get("email") as string;
+  const password = formData.get("password") as string;
+  const supabase = await createClient();
+
+  const { error } = await supabase.auth.signUp({
+    email,
+    password,
+    options: {
+      emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"}/auth/callback`,
+    },
+  });
+
+  if (error) {
+    console.error(error.code + " " + error.message);
+    return encodedRedirect("error", "/sign-up", "Could not authenticate user");
+  }
+
+  return encodedRedirect(
+    "success",
+    "/sign-up",
+    "Check email to continue sign in process",
+  );
+};
+
 export const checkUserSubscription = async (userId: string) => {
   const supabase = await createClient();
 
   const { data: subscription, error } = await supabase
-    .from('subscriptions')
-    .select('*')
-    .eq('user_id', userId)
-    .eq('status', 'active')
+    .from("subscriptions")
+    .select("*")
+    .eq("user_id", userId)
+    .eq("status", "active")
     .single();
 
   if (error) {
