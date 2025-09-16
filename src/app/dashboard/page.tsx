@@ -200,7 +200,7 @@ export default function Dashboard() {
     setPurchasingNumber(phoneNumber);
     try {
       const { data, error } = await supabase.functions.invoke(
-        "purchase-phone-number",
+        "supabase-functions-purchase-phone-number",
         {
           body: { phoneNumber },
           headers: {
