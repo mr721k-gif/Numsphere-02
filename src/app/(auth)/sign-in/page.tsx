@@ -3,15 +3,7 @@ import { SubmitButton } from "@/components/submit-button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { FormMessage, Message } from "@/components/form-message";
-import {
-  Phone,
-  Zap,
-  ArrowRight,
-  Shield,
-  Clock,
-  Headphones,
-  Mail,
-} from "lucide-react";
+import { Phone, Zap, Shield, Clock, Headphones, Mail } from "lucide-react";
 import { signInAction, signInWithGoogleAction } from "@/app/actions";
 
 export default function Login({ searchParams }: { searchParams: Message }) {

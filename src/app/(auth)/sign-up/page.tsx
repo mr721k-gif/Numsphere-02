@@ -3,7 +3,7 @@ import { SubmitButton } from "@/components/submit-button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { FormMessage, Message } from "@/components/form-message";
-import { Phone, Zap, ArrowRight, CheckCircle2 } from "lucide-react";
+import { Phone, Zap, CheckCircle2, ArrowRight } from "lucide-react";
 import { signUpAction, signInWithGoogleAction } from "@/app/actions";
 
 export default function Signup({ searchParams }: { searchParams: Message }) {

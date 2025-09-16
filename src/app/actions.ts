@@ -118,7 +118,9 @@ export const signInAction = async (formData: FormData) => {
     return encodedRedirect("error", "/sign-in", error.message);
   }
 
-  return redirect(`/verify-otp?email=${encodeURIComponent(email)}&type=magiclink`);
+  return redirect(
+    `/verify-otp?email=${encodeURIComponent(email)}&type=magiclink`,
+  );
 };
 
 export const signInWithGoogleAction = async () => {
@@ -127,7 +129,7 @@ export const signInWithGoogleAction = async () => {
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: "google",
     options: {
-      redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"}/auth/callback`,
+      redirectTo: `https://66861be7-0835-4ca2-9e0d-8735189e5980.canvases.tempo.build/auth/callback`,
     },
   });
 

@@ -14,6 +14,203 @@ export type Database = {
   }
   public: {
     Tables: {
+      available_numbers: {
+        Row: {
+          area_code: string | null
+          capabilities: Json | null
+          country_code: string | null
+          created_at: string | null
+          friendly_name: string | null
+          id: string
+          monthly_price: number | null
+          phone_number: string
+          region: string | null
+          twilio_sid: string | null
+        }
+        Insert: {
+          area_code?: string | null
+          capabilities?: Json | null
+          country_code?: string | null
+          created_at?: string | null
+          friendly_name?: string | null
+          id?: string
+          monthly_price?: number | null
+          phone_number: string
+          region?: string | null
+          twilio_sid?: string | null
+        }
+        Update: {
+          area_code?: string | null
+          capabilities?: Json | null
+          country_code?: string | null
+          created_at?: string | null
+          friendly_name?: string | null
+          id?: string
+          monthly_price?: number | null
+          phone_number?: string
+          region?: string | null
+          twilio_sid?: string | null
+        }
+        Relationships: []
+      }
+      call_flows: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          flow_data: Json | null
+          id: string
+          name: string
+          phone_number_id: string | null
+          status: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          flow_data?: Json | null
+          id?: string
+          name: string
+          phone_number_id?: string | null
+          status?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          flow_data?: Json | null
+          id?: string
+          name?: string
+          phone_number_id?: string | null
+          status?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "call_flows_phone_number_id_fkey"
+            columns: ["phone_number_id"]
+            isOneToOne: false
+            referencedRelation: "phone_numbers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      call_logs: {
+        Row: {
+          call_flow_id: string | null
+          created_at: string | null
+          direction: string | null
+          duration: number | null
+          ended_at: string | null
+          from_number: string | null
+          id: string
+          phone_number_id: string | null
+          recording_url: string | null
+          started_at: string | null
+          status: string | null
+          to_number: string | null
+          twilio_call_sid: string | null
+          user_id: string | null
+        }
+        Insert: {
+          call_flow_id?: string | null
+          created_at?: string | null
+          direction?: string | null
+          duration?: number | null
+          ended_at?: string | null
+          from_number?: string | null
+          id?: string
+          phone_number_id?: string | null
+          recording_url?: string | null
+          started_at?: string | null
+          status?: string | null
+          to_number?: string | null
+          twilio_call_sid?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          call_flow_id?: string | null
+          created_at?: string | null
+          direction?: string | null
+          duration?: number | null
+          ended_at?: string | null
+          from_number?: string | null
+          id?: string
+          phone_number_id?: string | null
+          recording_url?: string | null
+          started_at?: string | null
+          status?: string | null
+          to_number?: string | null
+          twilio_call_sid?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "call_logs_call_flow_id_fkey"
+            columns: ["call_flow_id"]
+            isOneToOne: false
+            referencedRelation: "call_flows"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "call_logs_phone_number_id_fkey"
+            columns: ["phone_number_id"]
+            isOneToOne: false
+            referencedRelation: "phone_numbers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      phone_numbers: {
+        Row: {
+          area_code: string | null
+          capabilities: Json | null
+          country_code: string | null
+          created_at: string | null
+          friendly_name: string | null
+          id: string
+          monthly_price: number | null
+          phone_number: string
+          purchased_at: string | null
+          status: string | null
+          twilio_sid: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          area_code?: string | null
+          capabilities?: Json | null
+          country_code?: string | null
+          created_at?: string | null
+          friendly_name?: string | null
+          id?: string
+          monthly_price?: number | null
+          phone_number: string
+          purchased_at?: string | null
+          status?: string | null
+          twilio_sid?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          area_code?: string | null
+          capabilities?: Json | null
+          country_code?: string | null
+          created_at?: string | null
+          friendly_name?: string | null
+          id?: string
+          monthly_price?: number | null
+          phone_number?: string
+          purchased_at?: string | null
+          status?: string | null
+          twilio_sid?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       subscriptions: {
         Row: {
           amount: number | null
@@ -99,6 +296,42 @@ export type Database = {
             referencedColumns: ["user_id"]
           },
         ]
+      }
+      user_subscriptions: {
+        Row: {
+          billing_cycle_end: string | null
+          billing_cycle_start: string | null
+          created_at: string | null
+          id: string
+          max_number_releases: number | null
+          number_releases_used: number | null
+          plan_type: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          billing_cycle_end?: string | null
+          billing_cycle_start?: string | null
+          created_at?: string | null
+          id?: string
+          max_number_releases?: number | null
+          number_releases_used?: number | null
+          plan_type?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          billing_cycle_end?: string | null
+          billing_cycle_start?: string | null
+          created_at?: string | null
+          id?: string
+          max_number_releases?: number | null
+          number_releases_used?: number | null
+          plan_type?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
       }
       users: {
         Row: {
