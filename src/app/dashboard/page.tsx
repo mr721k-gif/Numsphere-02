@@ -60,6 +60,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { useToast } from "@/components/ui/use-toast";
 import DashboardNavbar from "@/components/dashboard-navbar";
 
 interface TwilioPhoneNumber {
@@ -136,6 +137,7 @@ export default function Dashboard() {
   });
 
   const supabase = createClient();
+  const { toast } = useToast();
 
   useEffect(() => {
     const getUser = async () => {
@@ -168,6 +170,11 @@ export default function Dashboard() {
       setTwilioNumbers(data.numbers || []);
     } catch (error) {
       console.error("Error fetching Twilio numbers:", error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch Twilio numbers. Please try again.",
+        variant: "destructive",
+      });
     } finally {
       setLoadingTwilio(false);
     }
@@ -188,9 +195,17 @@ export default function Dashboard() {
 
       if (error) throw error;
       setAvailableNumbers(data.numbers || []);
+      toast({
+        title: "Success",
+        description: `Found ${data.numbers?.length || 0} available numbers.`,
+      });
     } catch (error) {
       console.error("Error searching numbers:", error);
-      alert("Failed to search numbers. Please try again.");
+      toast({
+        title: "Error",
+        description: "Failed to search numbers. Please try again.",
+        variant: "destructive",
+      });
     } finally {
       setSearchingNumbers(false);
     }
@@ -219,10 +234,17 @@ export default function Dashboard() {
         prev.filter((num) => num.phoneNumber !== phoneNumber),
       );
 
-      alert("Phone number purchased successfully!");
+      toast({
+        title: "Success",
+        description: "Phone number purchased successfully!",
+      });
     } catch (error) {
       console.error("Error purchasing number:", error);
-      alert("Failed to purchase number. Please try again.");
+      toast({
+        title: "Error",
+        description: "Failed to purchase number. Please try again.",
+        variant: "destructive",
+      });
     } finally {
       setPurchasingNumber(null);
     }
@@ -246,10 +268,17 @@ export default function Dashboard() {
 
       setCallFlows((prev) => [...prev, data]);
       setNewCallFlow({ name: "", description: "", phoneNumberId: "" });
-      alert("Call flow created successfully!");
+      toast({
+        title: "Success",
+        description: "Call flow created successfully!",
+      });
     } catch (error) {
       console.error("Error creating call flow:", error);
-      alert("Failed to create call flow. Please try again.");
+      toast({
+        title: "Error",
+        description: "Failed to create call flow. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -354,6 +383,43 @@ export default function Dashboard() {
                 </CardContent>
               </Card>
             </div>
+
+            {/* Quick Actions */}
+            <Card className="bg-white border-0 shadow-sm">
+              <CardHeader>
+                <CardTitle className="text-gray-900">Quick Actions</CardTitle>
+                <CardDescription className="text-gray-500">
+                  Get started with common tasks
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <Button
+                    className="bg-blue-600 hover:bg-blue-700 h-20 flex-col space-y-2"
+                    onClick={() => window.open('/dashboard/calling', '_blank')}
+                  >
+                    <PhoneCall className="w-6 h-6" />
+                    <span>Make a Call</span>
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="h-20 flex-col space-y-2 border-gray-200"
+                    onClick={() => setCurrentView("purchase")}
+                  >
+                    <ShoppingCart className="w-6 h-6" />
+                    <span>Buy Numbers</span>
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="h-20 flex-col space-y-2 border-gray-200"
+                    onClick={() => setCurrentView("flows")}
+                  >
+                    <Zap className="w-6 h-6" />
+                    <span>Create Flow</span>
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
 
             {/* Recent Activity */}
             <Card className="bg-white border-0 shadow-sm">
@@ -658,6 +724,47 @@ export default function Dashboard() {
           </div>
         );
 
+      case "calling":
+        return (
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900">
+                Make a Call
+              </h2>
+              <p className="text-gray-600">
+                Use our calling SDK to make calls directly from your browser
+              </p>
+            </div>
+            
+            <Card className="bg-white border-0 shadow-sm">
+              <CardHeader>
+                <CardTitle className="text-gray-900">Web Calling Interface</CardTitle>
+                <CardDescription className="text-gray-500">
+                  Make calls using your purchased phone numbers
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="text-center py-8">
+                  <PhoneCall className="w-16 h-16 text-blue-600 mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">
+                    Calling SDK Coming Soon
+                  </h3>
+                  <p className="text-gray-600 mb-4">
+                    We're working on integrating the Twilio Voice SDK to enable browser-based calling.
+                  </p>
+                  <Button 
+                    className="bg-blue-600 hover:bg-blue-700"
+                    onClick={() => setCurrentView("numbers")}
+                  >
+                    <Phone className="w-4 h-4 mr-2" />
+                    Manage Phone Numbers
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        );
+
       default:
         return <div>Content for {currentView}</div>;
     }
@@ -714,6 +821,16 @@ export default function Dashboard() {
                 <BarChart3 className="w-5 h-5" />
                 <span>Overview</span>
               </button>
+              
+              <a
+                href="/dashboard/calling"
+                target="_blank"
+                className="w-full flex items-center space-x-3 px-3 py-2 rounded-lg font-medium transition-colors text-gray-600 hover:bg-gray-50"
+              >
+                <PhoneCall className="w-5 h-5" />
+                <span>Make Calls</span>
+              </a>
+              
               <button
                 onClick={() => setCurrentView("numbers")}
                 className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg font-medium transition-colors ${

@@ -1,37 +1,39 @@
 "use client";
 
-import Link from 'next/link'
-import { Button } from './ui/button'
-import { createClient } from '../../supabase/client'
-import { useEffect, useState } from 'react'
-import { User } from '@supabase/supabase-js'
-import UserProfile from './user-profile'
-import { Phone, Zap } from 'lucide-react'
+import Link from "next/link";
+import { Button } from "./ui/button";
+import { createClient } from "../../supabase/client";
+import { useEffect, useState } from "react";
+import { User } from "@supabase/supabase-js";
+import UserProfile from "./user-profile";
+import { Phone, Zap } from "lucide-react";
 
 export default function Navbar() {
-  const [user, setUser] = useState<User | null>(null)
-  const [loading, setLoading] = useState(true)
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const supabase = createClient()
-    
+    const supabase = createClient();
+
     const getUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
-      setUser(user)
-      setLoading(false)
-    }
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      setUser(user);
+      setLoading(false);
+    };
 
-    getUser()
+    getUser();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        setUser(session?.user ?? null)
-        setLoading(false)
-      }
-    )
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      setUser(session?.user ?? null);
+      setLoading(false);
+    });
 
-    return () => subscription.unsubscribe()
-  }, [])
+    return () => subscription.unsubscribe();
+  }, []);
 
   if (loading) {
     return (
@@ -47,12 +49,12 @@ export default function Navbar() {
           </div>
         </div>
       </nav>
-    )
+    );
   }
 
   return (
-    <nav className="w-full border-b border-gray-200 bg-white py-4 shadow-sm">
-      <div className="container mx-auto px-4 flex justify-between items-center">
+    <nav className="w-full border-b border-gray-200 bg-white py-4 shadow-sm sticky">
+      <div className="container mx-auto px-4 flex justify-between items-center sticky">
         <Link href="/" prefetch className="flex items-center space-x-2 group">
           <div className="relative">
             <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-lg flex items-center justify-center shadow-lg group-hover:shadow-xl transition-shadow">
@@ -66,15 +68,24 @@ export default function Navbar() {
             Numsphere
           </span>
         </Link>
-        
+
         <div className="hidden md:flex items-center space-x-8">
-          <Link href="#features" className="text-gray-600 hover:text-blue-600 transition-colors font-medium">
+          <Link
+            href="#features"
+            className="text-gray-600 hover:text-blue-600 transition-colors font-medium"
+          >
             Features
           </Link>
-          <Link href="#pricing" className="text-gray-600 hover:text-blue-600 transition-colors font-medium">
+          <Link
+            href="#pricing"
+            className="text-gray-600 hover:text-blue-600 transition-colors font-medium"
+          >
             Pricing
           </Link>
-          <Link href="#contact" className="text-gray-600 hover:text-blue-600 transition-colors font-medium">
+          <Link
+            href="#contact"
+            className="text-gray-600 hover:text-blue-600 transition-colors font-medium"
+          >
             Contact
           </Link>
         </div>
@@ -92,7 +103,10 @@ export default function Navbar() {
           ) : (
             <>
               <Link href="/sign-in">
-                <Button variant="ghost" className="text-gray-700 hover:text-blue-600 hover:bg-blue-50">
+                <Button
+                  variant="ghost"
+                  className="text-gray-700 hover:text-blue-600 hover:bg-blue-50"
+                >
                   Sign In
                 </Button>
               </Link>
@@ -106,5 +120,5 @@ export default function Navbar() {
         </div>
       </div>
     </nav>
-  )
+  );
 }
