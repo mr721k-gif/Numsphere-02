@@ -211,6 +211,48 @@ export type Database = {
         }
         Relationships: []
       }
+      porting_requests: {
+        Row: {
+          account_holder_name: string
+          billing_address: string
+          created_at: string | null
+          current_carrier: string
+          id: string
+          loa_document_url: string | null
+          phone_number: string
+          status: string | null
+          twilio_port_request_id: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          account_holder_name: string
+          billing_address: string
+          created_at?: string | null
+          current_carrier: string
+          id?: string
+          loa_document_url?: string | null
+          phone_number: string
+          status?: string | null
+          twilio_port_request_id?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          account_holder_name?: string
+          billing_address?: string
+          created_at?: string | null
+          current_carrier?: string
+          id?: string
+          loa_document_url?: string | null
+          phone_number?: string
+          status?: string | null
+          twilio_port_request_id?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       subscriptions: {
         Row: {
           amount: number | null

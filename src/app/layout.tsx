@@ -1,27 +1,28 @@
-import { TempoInit } from "@/components/tempo-init";
-import type { Metadata } from "next";
-import { Inter } from "next/font/google";
-import Script from "next/script";
+import { GeistSans } from "geist/font/sans";
 import "./globals.css";
 
-const inter = Inter({ subsets: ["latin"] });
+const defaultUrl = process.env.VERCEL_URL
+  ? `https://${process.env.VERCEL_URL}`
+  : "http://localhost:3000";
 
-export const metadata: Metadata = {
-  title: "Tempo - Modern SaaS Starter",
-  description: "A modern full-stack starter template powered by Next.js",
+export const metadata = {
+  metadataBase: new URL(defaultUrl),
+  title: "VoIP Dashboard",
+  description: "Manage your VoIP communications and phone numbers",
 };
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      {/* <Script src="https://api.tempo.build/proxy-asset?url=https://storage.googleapis.com/tempo-public-assets/error-handling.js" /> [deprecated] */}
-      <body className={inter.className}>
-        {children}
-        <TempoInit />
+    <html lang="en" className={GeistSans.className}>
+      <body className="bg-background text-foreground">
+        <main className="min-h-screen flex flex-col">
+          {children}
+        </main>
+        {/* <Toaster /> */}
       </body>
     </html>
   );
