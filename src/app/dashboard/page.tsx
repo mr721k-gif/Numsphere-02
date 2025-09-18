@@ -108,6 +108,15 @@ interface CallLog {
   ended_at: string;
 }
 
+const formatPhoneNumber = (phoneNumber: string) => {
+  // Remove +1 prefix if present and format as XXX-XXX-XXXX
+  const cleaned = phoneNumber.replace(/^\+1/, '');
+  if (cleaned.length === 10) {
+    return `${cleaned.slice(0, 3)}-${cleaned.slice(3, 6)}-${cleaned.slice(6)}`;
+  }
+  return phoneNumber;
+};
+
 export default function Dashboard() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
@@ -226,7 +235,7 @@ export default function Dashboard() {
 
       if (error) throw error;
 
-      // Refresh the numbers list
+      // Refresh the numbers list to show the new purchase
       await fetchTwilioNumbers();
 
       // Remove from available numbers
@@ -238,6 +247,9 @@ export default function Dashboard() {
         title: "Success",
         description: "Phone number purchased successfully!",
       });
+
+      // Switch to numbers view to show the purchased number
+      setCurrentView("numbers");
     } catch (error) {
       console.error("Error purchasing number:", error);
       toast({
@@ -516,7 +528,7 @@ export default function Dashboard() {
                           </div>
                           <div>
                             <h3 className="font-semibold text-lg text-gray-900">
-                              {number.phoneNumber}
+                              {formatPhoneNumber(number.phoneNumber)}
                             </h3>
                             <p className="text-sm text-gray-600">
                               {number.friendlyName}
@@ -634,7 +646,7 @@ export default function Dashboard() {
                   <div>
                     <Label className="text-gray-700">Area Code</Label>
                     <Input
-                      placeholder="e.g., 415"
+                      placeholder="e.g., 313"
                       value={numberSearch.areaCode}
                       onChange={(e) =>
                         setNumberSearch((prev) => ({
@@ -648,7 +660,7 @@ export default function Dashboard() {
                   <div>
                     <Label className="text-gray-700">Contains</Label>
                     <Input
-                      placeholder="e.g., 1234"
+                      placeholder="e.g., 3333"
                       value={numberSearch.contains}
                       onChange={(e) =>
                         setNumberSearch((prev) => ({
@@ -694,7 +706,7 @@ export default function Dashboard() {
                       >
                         <div>
                           <h4 className="font-medium text-gray-900">
-                            {number.phoneNumber}
+                            {formatPhoneNumber(number.phoneNumber)}
                           </h4>
                           <p className="text-sm text-gray-600">
                             {number.locality}, {number.region} •{" "}

@@ -18,6 +18,36 @@ Deno.serve(async (req) => {
   }
 
   try {
+    // Initialize Supabase client
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_KEY") ?? "",
+      {
+        global: {
+          headers: {
+            Authorization: req.headers.get("Authorization") ?? "",
+          },
+        },
+      }
+    );
+
+    // Get the authenticated user
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return new Response(JSON.stringify({
+        error: "Unauthorized"
+      }), {
+        status: 401,
+        headers: {
+          ...corsHeaders,
+          "Content-Type": "application/json"
+        }
+      });
+    }
+
     const { phoneNumber } = await req.json();
 
     if (!phoneNumber) {
@@ -88,6 +118,27 @@ Deno.serve(async (req) => {
     }
 
     const purchasedNumber = await response.json();
+
+    // Save the purchased number to our database
+    const { data: savedNumber, error: dbError } = await supabase
+      .from('phone_numbers')
+      .insert({
+        user_id: user.id,
+        twilio_sid: purchasedNumber.sid,
+        phone_number: purchasedNumber.phone_number,
+        friendly_name: purchasedNumber.friendly_name,
+        capabilities: purchasedNumber.capabilities,
+        status: 'active',
+        country_code: purchasedNumber.phone_number.substring(0, 2),
+        area_code: purchasedNumber.phone_number.substring(2, 5)
+      })
+      .select()
+      .single();
+
+    if (dbError) {
+      console.error("Database error:", dbError);
+      // Don't fail the request if DB save fails, but log it
+    }
 
     return new Response(JSON.stringify({
       success: true,
