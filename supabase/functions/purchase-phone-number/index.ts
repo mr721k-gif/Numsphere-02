@@ -63,9 +63,10 @@ Deno.serve(async (req) => {
     }
 
     const twilioAccountSid = Deno.env.get("TWILIO_ACCOUNT_SID");
-    const twilioAuthToken = Deno.env.get("TWILIO_AUTH_TOKEN");
+    const twilioApiKey = Deno.env.get("TWILIO_API_KEY");
+    const twilioApiSecret = Deno.env.get("TWILIO_API_SECRET");
 
-    if (!twilioAccountSid || !twilioAuthToken) {
+    if (!twilioAccountSid || !twilioApiKey || !twilioApiSecret) {
       return new Response(JSON.stringify({
         error: "Twilio credentials not configured"
       }), {
@@ -77,18 +78,27 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Purchase the phone number from Twilio
+    // Get the webhook URL for TwiML
+    const webhookUrl = `${Deno.env.get("SUPABASE_URL")}/functions/v1/supabase-functions-twiml-webhook`;
+
+    // Purchase the phone number from Twilio with webhook configuration
     const twilioUrl = `https://api.twilio.com/2010-04-01/Accounts/${twilioAccountSid}/IncomingPhoneNumbers.json`;
 
     const response = await fetch(twilioUrl, {
       method: "POST",
       headers: {
-        Authorization: `Basic ${btoa(`${twilioAccountSid}:${twilioAuthToken}`)}`,
+        Authorization: `Basic ${btoa(`${twilioApiKey}:${twilioApiSecret}`)}`,
         "Content-Type": "application/x-www-form-urlencoded"
       },
       body: new URLSearchParams({
         PhoneNumber: phoneNumber,
-        FriendlyName: `Numsphere Number ${phoneNumber}`
+        FriendlyName: `Numsphere Number ${phoneNumber}`,
+        VoiceUrl: webhookUrl,
+        VoiceMethod: "POST",
+        StatusCallback: webhookUrl,
+        StatusCallbackMethod: "GET",
+        VoiceFallbackUrl: webhookUrl,
+        VoiceFallbackMethod: "POST"
       })
     });
 
@@ -147,9 +157,10 @@ Deno.serve(async (req) => {
         phoneNumber: purchasedNumber.phone_number,
         friendlyName: purchasedNumber.friendly_name,
         capabilities: purchasedNumber.capabilities,
-        status: "active"
+        status: "active",
+        webhookUrl: webhookUrl
       },
-      message: "Phone number purchased successfully"
+      message: "Phone number purchased successfully with TwiML webhook configured"
     }), {
       status: 200,
       headers: {

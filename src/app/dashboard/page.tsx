@@ -108,13 +108,23 @@ interface CallLog {
   ended_at: string;
 }
 
-const formatPhoneNumber = (phoneNumber: string) => {
-  // Remove +1 prefix if present and format as XXX-XXX-XXXX
-  const cleaned = phoneNumber.replace(/^\+1/, '');
-  if (cleaned.length === 10) {
-    return `${cleaned.slice(0, 3)}-${cleaned.slice(3, 6)}-${cleaned.slice(6)}`;
+const formatPhoneNumber = (number?: string) => {
+  if (!number) return "Unknown";
+  const cleaned = number.replace(/\D/g, "");
+  if (cleaned.length === 11 && cleaned.startsWith("1")) {
+    const withoutCountry = cleaned.slice(1);
+    return `+1 (${withoutCountry.slice(0, 3)}) ${withoutCountry.slice(3, 6)}-${withoutCountry.slice(6)}`;
+  } else if (cleaned.length === 10) {
+    return `+1 (${cleaned.slice(0, 3)}) ${cleaned.slice(3, 6)}-${cleaned.slice(6)}`;
   }
-  return phoneNumber;
+  return number.startsWith("+") ? number : `+${number}`;
+};
+
+const formatDuration = (seconds?: number) => {
+  if (!seconds) return "0:00";
+  const mins = Math.floor(seconds / 60);
+  const secs = seconds % 60;
+  return `${mins}:${secs.toString().padStart(2, "0")}`;
 };
 
 export default function Dashboard() {
@@ -408,7 +418,7 @@ export default function Dashboard() {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <Button
                     className="bg-blue-600 hover:bg-blue-700 h-20 flex-col space-y-2"
-                    onClick={() => window.open('/dashboard/calling', '_blank')}
+                    onClick={() => window.open("/dashboard/calling", "_blank")}
                   >
                     <PhoneCall className="w-6 h-6" />
                     <span>Make a Call</span>
@@ -450,15 +460,19 @@ export default function Dashboard() {
                       key={log.id}
                       className="flex items-center space-x-4 p-4 rounded-lg border border-gray-100 hover:bg-gray-50"
                     >
+                      {/* Status indicator */}
                       <div
                         className={`w-2 h-2 rounded-full ${
                           log.status === "completed"
                             ? "bg-green-500"
-                            : log.status === "busy"
+                            : log.status === "busy" ||
+                                log.status === "in-progress"
                               ? "bg-yellow-500"
                               : "bg-red-500"
                         }`}
                       />
+
+                      {/* Call info */}
                       <div className="flex-1">
                         <p className="text-sm font-medium text-gray-900">
                           {log.direction === "inbound"
@@ -467,11 +481,20 @@ export default function Dashboard() {
                           call
                         </p>
                         <p className="text-xs text-gray-500">
-                          {log.from_number} → {log.to_number} • {log.duration}s
+                          {formatPhoneNumber(log.from_number)} →{" "}
+                          {formatPhoneNumber(log.to_number)} •{" "}
+                          {formatDuration(log.duration)}
                         </p>
                       </div>
+
+                      {/* Call time */}
                       <div className="text-xs text-gray-500">
-                        {new Date(log.started_at).toLocaleTimeString()}
+                        {log.started_at
+                          ? new Date(log.started_at).toLocaleTimeString([], {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })
+                          : "-"}
                       </div>
                     </div>
                   ))}
@@ -740,17 +763,17 @@ export default function Dashboard() {
         return (
           <div className="space-y-6">
             <div>
-              <h2 className="text-2xl font-bold text-gray-900">
-                Make a Call
-              </h2>
+              <h2 className="text-2xl font-bold text-gray-900">Make a Call</h2>
               <p className="text-gray-600">
                 Use our calling SDK to make calls directly from your browser
               </p>
             </div>
-            
+
             <Card className="bg-white border-0 shadow-sm">
               <CardHeader>
-                <CardTitle className="text-gray-900">Web Calling Interface</CardTitle>
+                <CardTitle className="text-gray-900">
+                  Web Calling Interface
+                </CardTitle>
                 <CardDescription className="text-gray-500">
                   Make calls using your purchased phone numbers
                 </CardDescription>
@@ -762,9 +785,10 @@ export default function Dashboard() {
                     Calling SDK Coming Soon
                   </h3>
                   <p className="text-gray-600 mb-4">
-                    We're working on integrating the Twilio Voice SDK to enable browser-based calling.
+                    We're working on integrating the Twilio Voice SDK to enable
+                    browser-based calling.
                   </p>
-                  <Button 
+                  <Button
                     className="bg-blue-600 hover:bg-blue-700"
                     onClick={() => setCurrentView("numbers")}
                   >
@@ -833,7 +857,7 @@ export default function Dashboard() {
                 <BarChart3 className="w-5 h-5" />
                 <span>Overview</span>
               </button>
-              
+
               <a
                 href="/dashboard/calling"
                 target="_blank"
@@ -842,7 +866,7 @@ export default function Dashboard() {
                 <PhoneCall className="w-5 h-5" />
                 <span>Make Calls</span>
               </a>
-              
+
               <button
                 onClick={() => setCurrentView("numbers")}
                 className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg font-medium transition-colors ${
@@ -876,17 +900,13 @@ export default function Dashboard() {
                 <Zap className="w-5 h-5" />
                 <span>Call Flows</span>
               </button>
-              <button
-                onClick={() => setCurrentView("logs")}
-                className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg font-medium transition-colors ${
-                  currentView === "logs"
-                    ? "bg-blue-50 text-blue-600"
-                    : "text-gray-600 hover:bg-gray-50"
-                }`}
+              <a
+                href="/dashboard/call-logs"
+                className="w-full flex items-center space-x-3 px-3 py-2 rounded-lg font-medium transition-colors text-gray-600 hover:bg-gray-50"
               >
                 <PhoneCall className="w-5 h-5" />
                 <span>Call Logs</span>
-              </button>
+              </a>
               <button
                 onClick={() => setCurrentView("settings")}
                 className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg font-medium transition-colors ${
