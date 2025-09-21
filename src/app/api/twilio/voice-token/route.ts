@@ -9,7 +9,12 @@ export async function GET() {
     TWILIO_TWIML_APP_SID,
   } = process.env as Record<string, string | undefined>;
 
-  if (!TWILIO_ACCOUNT_SID || !TWILIO_API_KEY || !TWILIO_API_SECRET || !TWILIO_TWIML_APP_SID) {
+  if (
+    !TWILIO_ACCOUNT_SID ||
+    !TWILIO_API_KEY ||
+    !TWILIO_API_SECRET ||
+    !TWILIO_TWIML_APP_SID
+  ) {
     return NextResponse.json(
       {
         error: "Missing Twilio environment variables",
@@ -20,7 +25,7 @@ export async function GET() {
           "TWILIO_TWIML_APP_SID",
         ],
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 
@@ -39,15 +44,22 @@ export async function GET() {
       TWILIO_ACCOUNT_SID,
       TWILIO_API_KEY,
       TWILIO_API_SECRET,
-      { identity }
+      { identity },
     );
+
     token.addGrant(voiceGrant);
+
+    console.log("🔑 Twilio token issued for:", identity);
+    console.log("Grants:", token.grants);
 
     return NextResponse.json({ token: token.toJwt(), identity });
   } catch (error: any) {
     return NextResponse.json(
-      { error: "Failed to generate token", details: String(error?.message ?? error) },
-      { status: 500 }
+      {
+        error: "Failed to generate token",
+        details: String(error?.message ?? error),
+      },
+      { status: 500 },
     );
   }
 }

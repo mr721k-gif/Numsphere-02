@@ -163,6 +163,36 @@ export type Database = {
           },
         ]
       }
+      contacts: {
+        Row: {
+          created_at: string | null
+          id: string
+          image_url: string | null
+          name: string
+          phone_number: string
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          image_url?: string | null
+          name: string
+          phone_number: string
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          image_url?: string | null
+          name?: string
+          phone_number?: string
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       phone_numbers: {
         Row: {
           area_code: string | null
