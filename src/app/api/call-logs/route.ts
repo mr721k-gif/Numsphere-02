@@ -36,29 +36,54 @@ export async function GET(req: NextRequest) {
       from: userNumber,
       limit: 50,
     });
-    const inboundCalls = await client.calls.list({ to: userNumber, limit: 50 });
+    const inboundCalls = await client.calls.list({
+      to: userNumber,
+      limit: 50,
+    });
 
-    // Map Twilio data to frontend-friendly format
-    const logs = [...outboundCalls, ...inboundCalls]
-      .map((call) => ({
-        id: call.sid, // unique key
-        from_number: call.from || "Unknown",
-        to_number: call.to || "Unknown",
-        direction: call.direction as "inbound" | "outbound",
-        status: call.status || "unknown",
-        duration: call.duration || 0,
-        started_at: call.startTime
-          ? call.startTime.toISOString()
-          : new Date().toISOString(),
-        ended_at: call.endTime ? call.endTime.toISOString() : null,
-        created_at: call.startTime
-          ? call.startTime.toISOString()
-          : new Date().toISOString(),
-      }))
-      .sort(
-        (a, b) =>
-          new Date(b.started_at).getTime() - new Date(a.started_at).getTime(),
-      );
+    // Map calls and include recordings
+    const logs = await Promise.all(
+      [...outboundCalls, ...inboundCalls].map(async (call) => {
+        // Fetch recordings for this call
+        const recordings = await client.recordings.list({ callSid: call.sid });
+
+        return {
+          id: call.sid,
+          from_number: call.from || "Unknown",
+          to_number: call.to || "Unknown",
+          direction: call.direction as "inbound" | "outbound",
+          status: call.status || "unknown",
+          duration: call.duration || 0,
+          started_at: call.startTime
+            ? call.startTime.toISOString()
+            : new Date().toISOString(),
+          ended_at: call.endTime ? call.endTime.toISOString() : null,
+          created_at: call.startTime
+            ? call.startTime.toISOString()
+            : new Date().toISOString(),
+
+          // Attach recordings
+          recordings: recordings.map((r) => ({
+            recording_id: r.sid,
+            duration: r.duration,
+            url: `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Recordings/${r.sid}.mp3`,
+            created_at: r.dateCreated?.toISOString() || null,
+            // Optional: mark as voicemail if duration > 0 and call was inbound but not answered
+            is_voicemail:
+              call.direction === "inbound" &&
+              call.status === "completed" &&
+              !call.answeredBy &&
+              r.duration > 0,
+          })),
+        };
+      }),
+    );
+
+    // Sort by latest first
+    logs.sort(
+      (a, b) =>
+        new Date(b.started_at).getTime() - new Date(a.started_at).getTime(),
+    );
 
     return NextResponse.json({ logs });
   } catch (err) {

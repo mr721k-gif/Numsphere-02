@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { createClient } from "../../../supabase/client";
 import { User } from "@supabase/supabase-js";
 import { redirect } from "next/navigation";
+import { useRouter } from "next/navigation";
 import {
   Phone,
   PhoneCall,
@@ -157,6 +158,7 @@ export default function Dashboard() {
 
   const supabase = createClient();
   const { toast } = useToast();
+  const router = useRouter();
 
   useEffect(() => {
     const getUser = async () => {
@@ -164,7 +166,7 @@ export default function Dashboard() {
         data: { user },
       } = await supabase.auth.getUser();
       if (!user) {
-        redirect("/sign-in");
+        router.push("/sign-in");
       }
       setUser(user);
       setLoading(false);
@@ -889,17 +891,13 @@ export default function Dashboard() {
                 <ShoppingCart className="w-5 h-5" />
                 <span>Buy Numbers</span>
               </button>
-              <button
-                onClick={() => setCurrentView("flows")}
-                className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg font-medium transition-colors ${
-                  currentView === "flows"
-                    ? "bg-blue-50 text-blue-600"
-                    : "text-gray-600 hover:bg-gray-50"
-                }`}
+              <a
+                href="/dashboard/call-flows"
+                className="w-full flex items-center space-x-3 px-3 py-2 rounded-lg font-medium transition-colors text-gray-600 hover:bg-gray-50"
               >
                 <Zap className="w-5 h-5" />
-                <span>Call Flows</span>
-              </button>
+                <span>Call Flows (Builder)</span>
+              </a>
               <a
                 href="/dashboard/call-logs"
                 className="w-full flex items-center space-x-3 px-3 py-2 rounded-lg font-medium transition-colors text-gray-600 hover:bg-gray-50"

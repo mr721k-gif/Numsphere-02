@@ -20,6 +20,8 @@ import Link from "next/link";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
+import { useRouter } from "next/navigation";
+import { createClient } from "../../../../supabase/client";
 
 export default function CallingPage() {
   const [device, setDevice] = useState<any>(null);
@@ -34,6 +36,10 @@ export default function CallingPage() {
   const [selectedNumberSid, setSelectedNumberSid] = useState<string | null>(
     null,
   );
+  const [hasOwnedNumber, setHasOwnedNumber] = useState<boolean>(true);
+
+  const router = useRouter();
+  const supabase = createClient();
 
   // Contacts state
   const [contacts, setContacts] = useState<
@@ -79,6 +85,15 @@ export default function CallingPage() {
   ];
 
   useEffect(() => {
+    // Enforce auth client-side (middleware also protects server-side)
+    const check = async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) router.replace("/sign-in");
+    };
+    check();
+
     // Load contacts
     fetch("/api/contacts", { cache: "no-store" })
       .then((r) => r.json())
@@ -87,22 +102,32 @@ export default function CallingPage() {
       })
       .catch(() => {});
 
-    // Load Twilio numbers
+    // Load Twilio numbers (owned by the current user only)
     fetch("/api/twilio/numbers", { cache: "no-store" })
       .then((r) => r.json())
       .then((res) => {
-        if (res.numbers?.length) {
-          const numbers = res.numbers.map((n: any) => ({
+        const owned = Array.isArray(res.numbers)
+          ? res.numbers.filter((n: any) => n.owned)
+          : [];
+        if (owned.length) {
+          const numbers = owned.map((n: any) => ({
             sid: n.sid,
             phoneNumber: n.phoneNumber,
           }));
           setTwilioNumbers(numbers);
-          // set defaults
           setSelectedNumber(numbers[0].phoneNumber);
           setSelectedNumberSid(numbers[0].sid);
+          setHasOwnedNumber(true);
+        } else {
+          setTwilioNumbers([]);
+          setSelectedNumber("");
+          setSelectedNumberSid(null);
+          setHasOwnedNumber(false);
         }
       })
-      .catch(() => {});
+      .catch(() => {
+        setHasOwnedNumber(false);
+      });
 
     let interval: any;
     if (isCallActive) {
@@ -160,6 +185,14 @@ export default function CallingPage() {
   };
 
   const makeCall = async () => {
+    if (!hasOwnedNumber || !selectedNumber) {
+      toast({
+        title: "No caller ID",
+        description: "You need to buy a phone number first in Call Flows.",
+        variant: "destructive",
+      });
+      return;
+    }
     if (!deviceReady || !device) {
       toast({
         title: "Device not ready",
@@ -346,13 +379,20 @@ export default function CallingPage() {
     try {
       const fd = new FormData();
       fd.append("file", file);
-      const res = await fetch("/api/contacts/upload", { method: "POST", body: fd });
+      const res = await fetch("/api/contacts/upload", {
+        method: "POST",
+        body: fd,
+      });
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error || "Upload failed");
       setNewImageUrl(data.url);
       toast({ title: "Image uploaded" });
     } catch (err: any) {
-      toast({ title: "Upload failed", description: err.message, variant: "destructive" });
+      toast({
+        title: "Upload failed",
+        description: err.message,
+        variant: "destructive",
+      });
     } finally {
       setUploadingImage(false);
     }
@@ -381,6 +421,19 @@ export default function CallingPage() {
             </Button>
           </Link>
         </div>
+
+        {!hasOwnedNumber && (
+          <div className="mb-6 rounded-lg border border-amber-200 bg-amber-50 p-4 text-amber-800">
+            <div className="font-medium">You don't own a phone number yet</div>
+            <div className="text-sm mt-1">
+              Buy a number in The "Buy Number Page" inside of your Dashboard to
+              place calls.
+              <Link href="/dashboard" className="underline ml-1">
+                Go to Dashboard
+              </Link>
+            </div>
+          </div>
+        )}
 
         <Tabs defaultValue="dialer" className="w-full">
           <TabsList className="grid w-full grid-cols-2 mb-6">
@@ -425,7 +478,9 @@ export default function CallingPage() {
                         {uploadingImage ? (
                           <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-gray-400" />
                         ) : (
-                          newImageUrl && <Upload size={18} className="text-green-600" />
+                          newImageUrl && (
+                            <Upload size={18} className="text-green-600" />
+                          )
                         )}
                       </div>
                     </div>
@@ -439,7 +494,10 @@ export default function CallingPage() {
                       </div>
                     )}
                     <div className="flex justify-end">
-                      <Button type="submit" className="bg-blue-500 hover:bg-blue-600 text-white">
+                      <Button
+                        type="submit"
+                        className="bg-blue-500 hover:bg-blue-600 text-white"
+                      >
                         Save & Call
                       </Button>
                     </div>
@@ -449,7 +507,9 @@ export default function CallingPage() {
 
                   <div className="space-y-2 max-h-[520px] overflow-auto pr-2">
                     {contacts.length === 0 && (
-                      <div className="text-sm text-gray-500">No contacts yet. Add one above.</div>
+                      <div className="text-sm text-gray-500">
+                        No contacts yet. Add one above.
+                      </div>
                     )}
                     {contacts.map((c) => (
                       <div
@@ -465,15 +525,27 @@ export default function CallingPage() {
                                 `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(c.name)}`
                               }
                             />
-                            <AvatarFallback>{c.name?.[0] || "?"}</AvatarFallback>
+                            <AvatarFallback>
+                              {c.name?.[0] || "?"}
+                            </AvatarFallback>
                           </Avatar>
                           <div>
-                            <div className="font-medium text-gray-800">{c.name}</div>
-                            <div className="text-sm text-gray-500">{c.phone_number}</div>
+                            <div className="font-medium text-gray-800">
+                              {c.name}
+                            </div>
+                            <div className="text-sm text-gray-500">
+                              {c.phone_number}
+                            </div>
                           </div>
                         </div>
-                        <Button size="sm" className="opacity-0 group-hover:opacity-100 transition-opacity"
-                          onClick={(e) => { e.stopPropagation(); setTargetNumber(c.phone_number); }}>
+                        <Button
+                          size="sm"
+                          className="opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setTargetNumber(c.phone_number);
+                          }}
+                        >
                           Dial
                         </Button>
                       </div>
@@ -513,7 +585,9 @@ export default function CallingPage() {
                         value={targetNumber}
                         onChange={(e) => setTargetNumber(e.target.value)}
                         className="text-center text-xl font-mono h-14 text-gray-800 border-2 border-gray-200 focus:border-blue-500"
-                        disabled={isCallActive || isConnecting}
+                        disabled={
+                          isCallActive || isConnecting || !hasOwnedNumber
+                        }
                       />
                     </div>
 
@@ -524,7 +598,9 @@ export default function CallingPage() {
                           {Math.floor(callDuration / 60)}:
                           {(callDuration % 60).toString().padStart(2, "0")}
                         </div>
-                        <div className="text-sm text-gray-500">Call Duration</div>
+                        <div className="text-sm text-gray-500">
+                          Call Duration
+                        </div>
                       </div>
                     )}
 
@@ -533,7 +609,9 @@ export default function CallingPage() {
                       {!isCallActive ? (
                         <Button
                           onClick={makeCall}
-                          disabled={isConnecting || !targetNumber}
+                          disabled={
+                            isConnecting || !targetNumber || !hasOwnedNumber
+                          }
                           className="bg-green-500 hover:bg-green-600 text-white w-16 h-16 rounded-full shadow-lg transition-all duration-200 hover:scale-105"
                           size="icon"
                         >
@@ -573,6 +651,7 @@ export default function CallingPage() {
                       <Button
                         onClick={initializeTwilioDevice}
                         className="w-full bg-blue-500 hover:bg-blue-600 text-white h-12 text-lg font-medium shadow-lg"
+                        disabled={!hasOwnedNumber}
                       >
                         Enable Microphone
                       </Button>
@@ -582,7 +661,9 @@ export default function CallingPage() {
 
                 <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
                   <CardHeader className="text-center pb-4">
-                    <CardTitle className="text-xl font-bold text-gray-800">Dial Pad</CardTitle>
+                    <CardTitle className="text-xl font-bold text-gray-800">
+                      Dial Pad
+                    </CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="grid grid-cols-3 gap-4 max-w-xs mx-auto">
@@ -590,13 +671,19 @@ export default function CallingPage() {
                         <Button
                           key={index}
                           onClick={() => handleDialPadPress(item.number)}
-                          disabled={isCallActive || isConnecting}
+                          disabled={
+                            isCallActive || isConnecting || !hasOwnedNumber
+                          }
                           className="w-16 h-16 rounded-full bg-white hover:bg-gray-50 border-2 border-gray-200 hover:border-blue-300 text-gray-800 shadow-md transition-all duration-200 hover:scale-105 flex flex-col items-center justify-center p-0"
                           variant="outline"
                         >
-                          <span className="text-xl font-bold">{item.number}</span>
+                          <span className="text-xl font-bold">
+                            {item.number}
+                          </span>
                           {item.letters && (
-                            <span className="text-xs text-gray-500 -mt-1">{item.letters}</span>
+                            <span className="text-xs text-gray-500 -mt-1">
+                              {item.letters}
+                            </span>
                           )}
                         </Button>
                       ))}
@@ -604,7 +691,12 @@ export default function CallingPage() {
                     <div className="flex justify-center mt-4">
                       <Button
                         onClick={handleBackspace}
-                        disabled={isCallActive || isConnecting || !targetNumber}
+                        disabled={
+                          isCallActive ||
+                          isConnecting ||
+                          !targetNumber ||
+                          !hasOwnedNumber
+                        }
                         className="w-16 h-16 rounded-full bg-gray-100 hover:bg-gray-200 border-2 border-gray-200 hover:border-red-300 text-gray-600 shadow-md transition-all duration-200 hover:scale-105"
                         variant="outline"
                         size="icon"
@@ -622,29 +714,40 @@ export default function CallingPage() {
                   <CardTitle className="text-lg">Caller ID & Webhook</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  <Label htmlFor="out-number">Choose outgoing number</Label>
-                  <select
-                    id="out-number"
-                    className="w-full h-10 rounded-md border border-gray-200 bg-white px-3 text-sm"
-                    value={selectedNumber}
-                    onChange={(e) => {
-                      const num = e.target.value;
-                      setSelectedNumber(num);
-                      const match = twilioNumbers.find(
-                        (n) => n.phoneNumber === num,
-                      );
-                      setSelectedNumberSid(match?.sid || null);
-                    }}
-                  >
-                    {twilioNumbers.map((n) => (
-                      <option key={n.sid} value={n.phoneNumber}>
-                        {n.phoneNumber}
-                      </option>
-                    ))}
-                  </select>
-                  <Button onClick={configureVoiceWebhook} variant="secondary">
-                    Configure Voice Webhook
-                  </Button>
+                  {!hasOwnedNumber ? (
+                    <div className="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+                      No owned numbers found. Purchase one in Call Flows.
+                    </div>
+                  ) : (
+                    <>
+                      <Label htmlFor="out-number">Choose outgoing number</Label>
+                      <select
+                        id="out-number"
+                        className="w-full h-10 rounded-md border border-gray-200 bg-white px-3 text-sm"
+                        value={selectedNumber}
+                        onChange={(e) => {
+                          const num = e.target.value;
+                          setSelectedNumber(num);
+                          const match = twilioNumbers.find(
+                            (n) => n.phoneNumber === num,
+                          );
+                          setSelectedNumberSid(match?.sid || null);
+                        }}
+                      >
+                        {twilioNumbers.map((n) => (
+                          <option key={n.sid} value={n.phoneNumber}>
+                            {n.phoneNumber}
+                          </option>
+                        ))}
+                      </select>
+                      <Button
+                        onClick={configureVoiceWebhook}
+                        variant="secondary"
+                      >
+                        Configure Voice Webhook
+                      </Button>
+                    </>
+                  )}
                 </CardContent>
               </Card>
             </div>

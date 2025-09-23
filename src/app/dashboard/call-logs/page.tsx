@@ -1,13 +1,35 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Phone, PhoneIncoming, PhoneOutgoing, Clock, Calendar, Filter, ArrowLeft } from "lucide-react";
+import {
+  Phone,
+  PhoneIncoming,
+  PhoneOutgoing,
+  Clock,
+  Calendar,
+  Filter,
+  ArrowLeft,
+} from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
+
+interface Recording {
+  recording_id: string;
+  duration: number;
+  url: string;
+  created_at: string | null;
+  is_voicemail?: boolean;
+}
 
 interface CallLog {
   id: string;
@@ -19,6 +41,7 @@ interface CallLog {
   started_at: string;
   ended_at: string;
   created_at: string;
+  recordings?: Recording[];
 }
 
 export default function CallLogsPage() {
@@ -45,31 +68,35 @@ export default function CallLogsPage() {
     }
   };
 
-  const filteredLogs = callLogs.filter(log => {
+  const filteredLogs = callLogs.filter((log) => {
     const matchesFilter = filter === "all" || log.direction === filter;
-    const matchesSearch = 
-      log.from_number.includes(searchTerm) || 
+    const matchesSearch =
+      log.from_number.includes(searchTerm) ||
       log.to_number.includes(searchTerm) ||
       log.status.toLowerCase().includes(searchTerm.toLowerCase());
-    
+
     return matchesFilter && matchesSearch;
   });
 
   const formatPhoneNumber = (number: string) => {
     if (!number) return "Unknown";
-    
+
     const cleaned = number.replace(/\D/g, "");
-    
-    // Handle US numbers (11 digits starting with 1, or 10 digits)
+
     if (cleaned.length === 11 && cleaned.startsWith("1")) {
       const withoutCountry = cleaned.slice(1);
-      return `+1 (${withoutCountry.slice(0, 3)}) ${withoutCountry.slice(3, 6)}-${withoutCountry.slice(6)}`;
+      return `+1 (${withoutCountry.slice(0, 3)}) ${withoutCountry.slice(
+        3,
+        6,
+      )}-${withoutCountry.slice(6)}`;
     } else if (cleaned.length === 10) {
-      return `+1 (${cleaned.slice(0, 3)}) ${cleaned.slice(3, 6)}-${cleaned.slice(6)}`;
+      return `+1 (${cleaned.slice(0, 3)}) ${cleaned.slice(
+        3,
+        6,
+      )}-${cleaned.slice(6)}`;
     }
-    
-    // For other international numbers, just add + if not present
-    return number.startsWith('+') ? number : `+${number}`;
+
+    return number.startsWith("+") ? number : `+${number}`;
   };
 
   const formatDuration = (seconds: number) => {
@@ -81,7 +108,11 @@ export default function CallLogsPage() {
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString() + " " + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    return (
+      date.toLocaleDateString() +
+      " " +
+      date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+    );
   };
 
   const getStatusColor = (status: string) => {
@@ -118,14 +149,19 @@ export default function CallLogsPage() {
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-4">
             <Link href="/dashboard">
-              <Button variant="outline" className="bg-white/80 backdrop-blur-sm border-gray-200 hover:bg-white">
+              <Button
+                variant="outline"
+                className="bg-white/80 backdrop-blur-sm border-gray-200 hover:bg-white"
+              >
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 Back to Dashboard
               </Button>
             </Link>
             <div>
               <h1 className="text-3xl font-bold text-gray-800">Call Logs</h1>
-              <p className="text-gray-600 mt-1">View your call history and details</p>
+              <p className="text-gray-600 mt-1">
+                View your call history and details
+              </p>
             </div>
           </div>
           <Link href="/dashboard/calling">
@@ -175,10 +211,12 @@ export default function CallLogsPage() {
             {filteredLogs.length === 0 ? (
               <div className="text-center py-12">
                 <Phone className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-600 mb-2">No calls found</h3>
+                <h3 className="text-lg font-medium text-gray-600 mb-2">
+                  No calls found
+                </h3>
                 <p className="text-gray-500">
-                  {searchTerm || filter !== "all" 
-                    ? "Try adjusting your search or filter criteria" 
+                  {searchTerm || filter !== "all"
+                    ? "Try adjusting your search or filter criteria"
                     : "Start making calls to see your history here"}
                 </p>
               </div>
@@ -187,36 +225,42 @@ export default function CallLogsPage() {
                 {filteredLogs.map((log) => (
                   <div
                     key={log.id}
-                    className="flex items-center justify-between p-4 bg-white rounded-lg border border-gray-200 hover:shadow-md transition-shadow"
+                    className="p-4 bg-white rounded-lg border border-gray-200 hover:shadow-md transition-shadow"
                   >
-                    <div className="flex items-center gap-4">
-                      <div className={`p-2 rounded-full ${
-                        log.direction === "inbound" ? "bg-green-100" : "bg-blue-100"
-                      }`}>
-                        {log.direction === "inbound" ? (
-                          <PhoneIncoming className="w-5 h-5 text-green-600" />
-                        ) : (
-                          <PhoneOutgoing className="w-5 h-5 text-blue-600" />
-                        )}
-                      </div>
-                      
-                      <div>
-                        <div className="font-medium text-gray-800">
-                          {log.direction === "inbound" 
-                            ? `${formatPhoneNumber(log.from_number)} → ${formatPhoneNumber(log.to_number)}`
-                            : `${formatPhoneNumber(log.from_number)} → ${formatPhoneNumber(log.to_number)}`
-                          }
+                    {/* Call Info */}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-4">
+                        <div
+                          className={`p-2 rounded-full ${
+                            log.direction === "inbound"
+                              ? "bg-green-100"
+                              : "bg-blue-100"
+                          }`}
+                        >
+                          {log.direction === "inbound" ? (
+                            <PhoneIncoming className="w-5 h-5 text-green-600" />
+                          ) : (
+                            <PhoneOutgoing className="w-5 h-5 text-blue-600" />
+                          )}
                         </div>
-                        <div className="text-sm text-gray-500 flex items-center gap-2">
-                          <span className="capitalize">{log.direction} call</span>
-                          <span>•</span>
-                          <Calendar className="w-3 h-3" />
-                          {formatDate(log.started_at)}
-                        </div>
-                      </div>
-                    </div>
 
-                    <div className="flex items-center gap-4">
+                        <div>
+                          <div className="font-medium text-gray-800">
+                            {`${formatPhoneNumber(
+                              log.from_number,
+                            )} → ${formatPhoneNumber(log.to_number)}`}
+                          </div>
+                          <div className="text-sm text-gray-500 flex items-center gap-2">
+                            <span className="capitalize">
+                              {log.direction} call
+                            </span>
+                            <span>•</span>
+                            <Calendar className="w-3 h-3" />
+                            {formatDate(log.started_at)}
+                          </div>
+                        </div>
+                      </div>
+
                       <div className="text-right">
                         <Badge className={getStatusColor(log.status)}>
                           {log.status}
@@ -229,6 +273,48 @@ export default function CallLogsPage() {
                         )}
                       </div>
                     </div>
+
+                    {/* Recordings Section */}
+                    {log.recordings && log.recordings.length > 0 && (
+                      <div className="mt-3 space-y-2">
+                        {log.recordings.map((rec) => (
+                          <div
+                            key={rec.recording_id}
+                            className="flex items-center justify-between bg-gray-50 p-2 rounded-md"
+                          >
+                            <div className="flex flex-col text-sm text-gray-600">
+                              <span>
+                                {rec.is_voicemail
+                                  ? "📩 Voicemail"
+                                  : "🎙 Recording"}{" "}
+                                ({formatDuration(rec.duration)})
+                              </span>
+                              {rec.created_at && (
+                                <span className="text-xs text-gray-400">
+                                  {new Date(rec.created_at).toLocaleString()}
+                                </span>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <audio controls src={rec.url} className="w-40" />
+                              <Button
+                                asChild
+                                variant="outline"
+                                size="sm"
+                                className="text-blue-600 border-blue-200 hover:bg-blue-50"
+                              >
+                                <a
+                                  href={`/api/recording/${rec.recording_id}`}
+                                  download
+                                >
+                                  Download
+                                </a>
+                              </Button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>

@@ -6,7 +6,7 @@ export async function GET(request: NextRequest) {
   try {
     const supabase = await createClient();
 
-    // Check if user is authenticated
+    // 🔑 Auth check
     const {
       data: { user },
       error: authError,
@@ -19,95 +19,67 @@ export async function GET(request: NextRequest) {
     const accountSid = process.env.TWILIO_ACCOUNT_SID;
     const authToken = process.env.TWILIO_AUTH_TOKEN;
 
-    // Mock data for fallback
-    const mockTwilioNumbers = [
-      {
-        sid: "PN1234567890abcdef1234567890abcdef",
-        phoneNumber: "+1 (555) 123-4567",
-        friendlyName: "Main Business Line",
-        capabilities: {
-          voice: true,
-          sms: true,
-          mms: false,
-        },
-        status: "in-use",
-        dateCreated: "2024-01-15T10:30:00Z",
-        origin: "twilio",
-      },
-      {
-        sid: "PN2234567890abcdef1234567890abcdef",
-        phoneNumber: "+1 (800) 555-0123",
-        friendlyName: "Customer Support",
-        capabilities: {
-          voice: true,
-          sms: false,
-          mms: false,
-        },
-        status: "in-use",
-        dateCreated: "2024-01-20T14:15:00Z",
-        origin: "twilio",
-      },
-      {
-        sid: "PN3234567890abcdef1234567890abcdef",
-        phoneNumber: "+44 20 7946 0958",
-        friendlyName: "UK Office",
-        capabilities: {
-          voice: true,
-          sms: true,
-          mms: true,
-        },
-        status: "in-use",
-        dateCreated: "2024-02-01T09:45:00Z",
-        origin: "twilio",
-      },
-    ];
-
     if (!accountSid || !authToken) {
       return NextResponse.json(
-        {
-          numbers: mockTwilioNumbers,
-          message: "Twilio credentials not configured - showing mock data",
-        },
-        { status: 200 },
+        { error: "Twilio not configured", numbers: [] },
+        { status: 500 },
       );
     }
 
-    try {
-      const client = twilio(accountSid, authToken);
+    // 🟢 Owned numbers from Supabase (fix: correct table name)
+    const { data: ownedRows, error: ownedError } = await supabase
+      .from("phone_numbers")
+      .select("twilio_sid, phone_number, friendly_name, capabilities, status, created_at")
+      .eq("user_id", user.id);
 
-      const numbers = await client.incomingPhoneNumbers.list({ limit: 50 });
+    if (ownedError) {
+      console.error("Supabase error:", ownedError);
+      return NextResponse.json(
+        { error: "Failed to load owned numbers", numbers: [] },
+        { status: 500 },
+      );
+    }
 
-      const formattedNumbers = numbers.map((number: any) => ({
-        sid: number.sid,
-        phoneNumber: number.phoneNumber,
-        friendlyName: number.friendlyName,
-        capabilities: number.capabilities,
-        status: number.status,
-        dateCreated: number.dateCreated,
-        origin: "twilio",
+    const ownedNumbers = ownedRows || [];
+
+    // 🔵 Live Twilio numbers
+    const client = twilio(accountSid, authToken);
+    const twilioNumbers = await client.incomingPhoneNumbers.list({ limit: 50 });
+
+    // 🔀 Merge
+    const merged = twilioNumbers.map((n: any) => ({
+      sid: n.sid,
+      phoneNumber: n.phoneNumber,
+      friendlyName: n.friendlyName,
+      capabilities: n.capabilities,
+      status: n.status,
+      dateCreated: n.dateCreated,
+      origin: "twilio",
+      owned: ownedNumbers.some((o: any) => o.twilio_sid === n.sid),
+    }));
+
+    // 🟡 Add Supabase-only numbers (if Twilio doesn't return them anymore)
+    const extras = ownedNumbers
+      .filter((o: any) => !merged.some((t: any) => t.sid === o.twilio_sid))
+      .map((o: any) => ({
+        sid: o.twilio_sid,
+        phoneNumber: o.phone_number,
+        friendlyName: o.friendly_name,
+        capabilities:
+          typeof o.capabilities === "string"
+            ? JSON.parse(o.capabilities)
+            : o.capabilities || {},
+        status: o.status,
+        dateCreated: o.created_at,
+        origin: "supabase",
+        owned: true,
       }));
 
-      return NextResponse.json({
-        numbers: formattedNumbers,
-        message: "Live Twilio data",
-      });
-    } catch (twilioError) {
-      console.error("Twilio API error:", twilioError);
-      return NextResponse.json(
-        {
-          numbers: mockTwilioNumbers,
-          message: "Twilio API error - showing mock data",
-        },
-        { status: 200 },
-      );
-    }
+    return NextResponse.json({ numbers: [...merged, ...extras] });
   } catch (error) {
     console.error("Error fetching Twilio numbers:", error);
     return NextResponse.json(
-      {
-        error: "Failed to fetch phone numbers",
-        numbers: [],
-      },
+      { error: "Failed to fetch phone numbers", numbers: [] },
       { status: 500 },
     );
   }
