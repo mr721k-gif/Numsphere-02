@@ -60,21 +60,52 @@ async function getSupabase() {
   );
   const url =
     Deno.env.get("SUPABASE_URL") || Deno.env.get("NEXT_PUBLIC_SUPABASE_URL");
-  const key = Deno.env.get("SERVICE_KEY") || Deno.env.get("SUPABASE_ANON_KEY");
+  // Prefer service role for server-side function access; fall back to anon if missing
+  const key =
+    Deno.env.get("SUPABASE_SERVICE_KEY") ||
+    Deno.env.get("SERVICE_KEY") ||
+    Deno.env.get("SUPABASE_ANON_KEY");
   if (!url || !key) throw new Error("Supabase URL or key not set");
   return createClient(url, key);
 }
 async function loadFlowByPhone(phone) {
   const supabase = await getSupabase();
-  const { data, error } = await supabase
-    .from("call_flows")
-    .select("id, flow_json, recording_enabled, recording_disclaimer")
+
+  // Find the phone number record first
+  const { data: phoneRec, error: phoneErr } = await supabase
+    .from("phone_numbers")
+    .select("id")
     .eq("phone_number", phone)
     .maybeSingle();
-  if (error) throw error;
-  if (data && typeof data.flow_json === "string")
-    data.flow_json = JSON.parse(data.flow_json);
-  return data;
+  if (phoneErr) throw phoneErr;
+  if (!phoneRec) return null;
+
+  // Load the active call flow associated to this phone number
+  const { data: flow, error: flowErr } = await supabase
+    .from("call_flows")
+    .select(
+      "id, flow_json, flow_data, recording_enabled, recording_disclaimer",
+    )
+    .eq("phone_number_id", phoneRec.id)
+    .maybeSingle();
+  if (flowErr) throw flowErr;
+  if (!flow) return null;
+
+  // Normalize flow structure to flow_json object
+  let flowJson = flow.flow_json ?? flow.flow_data ?? null;
+  if (typeof flowJson === "string") {
+    try {
+      flowJson = JSON.parse(flowJson);
+    } catch (_) {
+      flowJson = null;
+    }
+  }
+  return {
+    id: flow.id,
+    flow_json: flowJson,
+    recording_enabled: !!flow.recording_enabled,
+    recording_disclaimer: flow.recording_disclaimer || null,
+  };
 }
 function escapeXml(unsafe) {
   return unsafe
