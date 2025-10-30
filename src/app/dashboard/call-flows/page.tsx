@@ -18,6 +18,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { useRouter } from "next/navigation";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -68,6 +69,7 @@ export default function CallFlowManager() {
 
   const supabase = createClient();
   const { toast } = useToast();
+  const router = useRouter();
 
   const {
     flows,
@@ -369,7 +371,7 @@ export default function CallFlowManager() {
                   Purchase a phone number first to create your first call flow
                 </p>
                 <Button
-                  onClick={() => window.location.reload()}
+                  onClick={() => router.push("/dashboard?view=purchase")}
                   className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold px-8 py-3 rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-lg shadow-indigo-600/30"
                 >
                   <Phone className="h-4 w-4 mr-2" />

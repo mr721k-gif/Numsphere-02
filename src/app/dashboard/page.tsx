@@ -5,6 +5,7 @@ import { createClient } from "../../../supabase/client";
 import { User } from "@supabase/supabase-js";
 import { redirect } from "next/navigation";
 import { useRouter } from "next/navigation";
+
 import {
   Phone,
   PhoneCall,
@@ -697,7 +698,7 @@ export default function Dashboard() {
                 Buy Phone Numbers
               </h2>
               <p className="text-gray-600 mt-1">
-                Search and purchase phone numbers from Twilio
+                Search and purchase phone numbers
               </p>
             </div>
 

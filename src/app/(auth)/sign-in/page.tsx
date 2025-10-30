@@ -3,73 +3,63 @@ import { SubmitButton } from "@/components/submit-button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { FormMessage, Message } from "@/components/form-message";
-import { Phone, Zap, Shield, Clock, Headphones, Mail } from "lucide-react";
+import {
+  Phone,
+  Zap,
+  Shield,
+  Clock,
+  Headphones,
+  Mail,
+  CheckCircle2,
+} from "lucide-react";
 import { signInAction, signInWithGoogleAction } from "@/app/actions";
 
 export default function Login({ searchParams }: { searchParams: Message }) {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
+    <div className="min-h-screen bg-gradient-to-br from-indigo-500 via-purple-500 to-indigo-600 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
+      {/* Background pattern */}
+      <div className="absolute inset-0 opacity-10">
+        <div
+          className="absolute inset-0"
+          style={{
+            backgroundImage:
+              "radial-gradient(circle at 2px 2px, white 1px, transparent 0)",
+            backgroundSize: "40px 40px",
+          }}
+        ></div>
+      </div>
+
+      <div className="max-w-md w-full space-y-8 relative z-10">
         {/* Logo and Header */}
         <div className="text-center">
           <Link
             href="/"
-            className="flex items-center justify-center space-x-2 group mb-8"
+            className="inline-flex items-center gap-3 group mb-8 hover:scale-105 transition-transform"
           >
-            <div className="relative">
-              <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg group-hover:shadow-xl transition-shadow">
-                <Phone className="w-6 h-6 text-white" />
-              </div>
-              <div className="absolute -top-1 -right-1 w-4 h-4 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full flex items-center justify-center">
-                <Zap className="w-2.5 h-2.5 text-white" />
-              </div>
+            <div className="relative w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-2xl border-4 border-white/30">
+              <Phone className="w-6 h-6 text-indigo-600" />
+              <div className="absolute -top-1 -right-1 w-4 h-4 bg-yellow-400 rounded-full border-2 border-white"></div>
             </div>
-            <span className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-              Numsphere
-            </span>
+            <span className="text-3xl font-black text-white">Numsphere*</span>
           </Link>
 
-          <h2 className="text-3xl font-bold text-gray-900 mb-2">
+          <h2 className="text-5xl font-black text-white mb-4 leading-tight">
             Welcome back
           </h2>
-          <p className="text-gray-600">
-            Sign in to your VoIP dashboard and manage your communications
+          <p className="text-xl text-indigo-100 font-medium">
+            Sign in to your VoIP dashboard
           </p>
         </div>
 
-        {/* Quick Stats */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-          <div className="grid grid-cols-3 gap-4 text-center">
-            <div className="space-y-2">
-              <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center mx-auto">
-                <Shield className="w-5 h-5 text-blue-600" />
-              </div>
-              <div className="text-xs text-gray-600">Enterprise Security</div>
-            </div>
-            <div className="space-y-2">
-              <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center mx-auto">
-                <Clock className="w-5 h-5 text-green-600" />
-              </div>
-              <div className="text-xs text-gray-600">99.9% Uptime</div>
-            </div>
-            <div className="space-y-2">
-              <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center mx-auto">
-                <Headphones className="w-5 h-5 text-purple-600" />
-              </div>
-              <div className="text-xs text-gray-600">24/7 Support</div>
-            </div>
-          </div>
-        </div>
-
         {/* Sign In Form */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
+        <div className="bg-white rounded-3xl shadow-2xl border-4 border-gray-900 p-8">
           <form className="space-y-6">
             <SubmitButton
               formAction={signInWithGoogleAction}
-              className="w-full flex justify-center items-center py-3 px-4 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all"
+              className="w-full flex justify-center items-center py-4 px-4 border-4 border-gray-900 rounded-2xl shadow-lg text-base font-black text-gray-900 bg-white hover:bg-gray-50 focus:outline-none focus:ring-4 focus:ring-indigo-500 transition-all hover:scale-105"
               pendingText="Redirecting..."
             >
-              <svg className="mr-2 w-4 h-4" viewBox="0 0 24 24">
+              <svg className="mr-2 w-5 h-5" viewBox="0 0 24 24">
                 <path
                   fill="#4285F4"
                   d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
@@ -92,10 +82,10 @@ export default function Login({ searchParams }: { searchParams: Message }) {
 
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t border-gray-300" />
+                <span className="w-full border-t-4 border-gray-900" />
               </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-white px-2 text-gray-500">
+              <div className="relative flex justify-center text-sm uppercase">
+                <span className="bg-white px-4 text-gray-900 font-black">
                   Or sign in with email
                 </span>
               </div>
@@ -104,7 +94,7 @@ export default function Login({ searchParams }: { searchParams: Message }) {
             <div>
               <Label
                 htmlFor="email"
-                className="text-sm font-medium text-gray-700"
+                className="text-sm font-black text-gray-900 mb-2 block"
               >
                 Email Address
               </Label>
@@ -113,17 +103,17 @@ export default function Login({ searchParams }: { searchParams: Message }) {
                 name="email"
                 type="email"
                 autoComplete="email"
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                className="mt-1 block w-full px-4 py-3 border-4 border-gray-900 rounded-2xl shadow-sm placeholder-gray-400 focus:outline-none focus:ring-4 focus:ring-indigo-500 font-semibold"
                 placeholder="you@company.com"
               />
             </div>
 
             <SubmitButton
               formAction={signInAction}
-              className="w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all"
+              className="w-full flex justify-center items-center py-4 px-4 border-4 border-gray-900 rounded-2xl shadow-lg text-base font-black text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 focus:outline-none focus:ring-4 focus:ring-indigo-500 transition-all hover:scale-105"
               pendingText="Sending code..."
             >
-              <Mail className="mr-2 w-4 h-4" />
+              <Mail className="mr-2 w-5 h-5" />
               Send Verification Code
             </SubmitButton>
 
@@ -131,11 +121,11 @@ export default function Login({ searchParams }: { searchParams: Message }) {
           </form>
 
           <div className="mt-6 text-center">
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-gray-700 font-semibold">
               Don't have an account?{" "}
               <Link
                 href="/sign-up"
-                className="font-medium text-blue-600 hover:text-blue-500 transition-colors"
+                className="font-black text-indigo-600 hover:text-indigo-700 transition-colors"
               >
                 Create account
               </Link>
@@ -143,11 +133,18 @@ export default function Login({ searchParams }: { searchParams: Message }) {
           </div>
         </div>
 
+        {/* Trust indicators */}
+        <div className="flex flex-wrap items-center justify-center gap-6 text-sm text-white font-bold">
+          <div className="flex items-center">
+            <CheckCircle2 className="w-5 h-5 mr-2" />
+            Easy setup
+          </div>
+        </div>
+
         {/* Security Notice */}
         <div className="text-center">
-          <p className="text-xs text-gray-500">
-            Your data is protected with enterprise-grade encryption and security
-            measures
+          <p className="text-sm text-indigo-100 font-medium">
+            Your data is protected with enterprise-grade encryption
           </p>
         </div>
       </div>
