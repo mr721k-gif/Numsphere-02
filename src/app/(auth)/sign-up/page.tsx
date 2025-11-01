@@ -1,12 +1,71 @@
+"use client";
+
 import Link from "next/link";
+import { useState, useEffect } from "react";
 import { SubmitButton } from "@/components/submit-button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { FormMessage, Message } from "@/components/form-message";
-import { Phone, Zap, CheckCircle2, ArrowRight } from "lucide-react";
+import { Phone, ArrowRight } from "lucide-react";
 import { signUpAction, signInWithGoogleAction } from "@/app/actions";
 
 export default function Signup({ searchParams }: { searchParams: Message }) {
+  const [address, setAddress] = useState("");
+  const [suggestions, setSuggestions] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  // Fetch address suggestions
+  const fetchSuggestions = async (query: string) => {
+    if (!query || query.length < 3) {
+      setSuggestions([]);
+      return;
+    }
+    setLoading(true);
+    try {
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
+          query,
+        )}`,
+      );
+      const data = await res.json();
+      setSuggestions(data.slice(0, 5));
+    } catch (err) {
+      console.error("Address lookup failed:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Handle typing with debounce
+  useEffect(() => {
+    if (!address || address.length < 3) {
+      setSuggestions([]);
+      return;
+    }
+
+    const delay = setTimeout(() => fetchSuggestions(address), 400);
+    return () => clearTimeout(delay);
+  }, [address]);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (!target.closest("#address-container")) {
+        setSuggestions([]);
+      }
+    };
+
+    document.addEventListener("click", handleClickOutside);
+    return () => document.removeEventListener("click", handleClickOutside);
+  }, []);
+
+  // Select a suggestion
+  const handleSelect = (s: any) => {
+    setAddress(s.display_name);
+    setSuggestions([]);
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-500 via-purple-500 to-indigo-600 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
       {/* Background pattern */}
@@ -43,27 +102,9 @@ export default function Signup({ searchParams }: { searchParams: Message }) {
           </p>
         </div>
 
-        {/* Benefits */}
-        <div className="bg-white rounded-3xl shadow-2xl border-4 border-gray-900 p-6 space-y-4">
-          <h3 className="font-black text-gray-900 mb-4 text-lg">
-            What you'll get:
-          </h3>
-          <div className="space-y-3">
-            {[
-              "Crystal-clear HD voice calls",
-              "Smart call routing and flows",
-              "Real-time analytics and insights",
-            ].map((benefit, index) => (
-              <div key={index} className="flex items-center space-x-3">
-                <CheckCircle2 className="w-5 h-5 text-green-500 flex-shrink-0" />
-                <span className="text-sm text-gray-700">{benefit}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-
         {/* Sign Up Card */}
         <div className="bg-white rounded-3xl shadow-2xl border-4 border-gray-900 p-8">
+          {/* Google Sign Up */}
           <form action={signInWithGoogleAction} method="post" className="mb-6">
             <SubmitButton
               formAction={signInWithGoogleAction}
@@ -104,7 +145,7 @@ export default function Signup({ searchParams }: { searchParams: Message }) {
             </div>
           </div>
 
-          {/* Manual Sign-up form */}
+          {/* Manual Sign Up */}
           <form className="space-y-6" action={signUpAction} method="post">
             <div>
               <Label
@@ -117,10 +158,9 @@ export default function Signup({ searchParams }: { searchParams: Message }) {
                 id="full_name"
                 name="full_name"
                 type="text"
-                autoComplete="name"
                 required
-                className="mt-1 block w-full px-4 py-3 border-4 border-gray-900 rounded-2xl shadow-sm placeholder-gray-400 focus:outline-none focus:ring-4 focus:ring-indigo-500 font-semibold"
                 placeholder="John Doe"
+                className="mt-1 block w-full px-4 py-3 border-4 border-gray-900 rounded-2xl font-semibold"
               />
             </div>
 
@@ -135,10 +175,9 @@ export default function Signup({ searchParams }: { searchParams: Message }) {
                 id="email"
                 name="email"
                 type="email"
-                autoComplete="email"
                 required
-                className="mt-1 block w-full px-4 py-3 border-4 border-gray-900 rounded-2xl shadow-sm placeholder-gray-400 focus:outline-none focus:ring-4 focus:ring-indigo-500 font-semibold"
                 placeholder="you@company.com"
+                className="mt-1 block w-full px-4 py-3 border-4 border-gray-900 rounded-2xl font-semibold"
               />
             </div>
 
@@ -149,21 +188,46 @@ export default function Signup({ searchParams }: { searchParams: Message }) {
               >
                 Address
               </Label>
-              <Input
-                id="address"
-                name="address"
-                type="text"
-                autoComplete="address-line1"
-                required
-                className="mt-1 block w-full px-4 py-3 border-4 border-gray-900 rounded-2xl shadow-sm placeholder-gray-400 focus:outline-none focus:ring-4 focus:ring-indigo-500 font-semibold"
-                placeholder="123 Main St, City, State 12345"
-              />
+
+              <div className="relative" id="address-container">
+                <Input
+                  id="address"
+                  name="address"
+                  type="text"
+                  value={address}
+                  onChange={(e) => setAddress(e.target.value)}
+                  placeholder="Start typing your address..."
+                  className="mt-1 block w-full px-4 py-3 border-4 border-gray-900 rounded-2xl font-semibold"
+                  autoComplete="off"
+                  required
+                />
+
+                {loading && (
+                  <div className="absolute right-3 top-3 text-sm text-gray-400">
+                    Loading...
+                  </div>
+                )}
+
+                {suggestions.length > 0 && (
+                  <ul className="absolute z-10 bg-white border border-gray-300 rounded-xl mt-2 shadow-lg max-h-48 overflow-y-auto w-full">
+                    {suggestions.map((s, i) => (
+                      <li
+                        key={i}
+                        className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-sm"
+                        onClick={() => handleSelect(s)}
+                      >
+                        {s.display_name}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
             </div>
 
             <SubmitButton
               formAction={signUpAction}
-              className="w-full flex justify-center items-center py-4 px-4 border-4 border-gray-900 rounded-2xl shadow-lg text-base font-black text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 focus:outline-none focus:ring-4 focus:ring-indigo-500 transition-all hover:scale-105"
               pendingText="Creating your account..."
+              className="w-full flex justify-center items-center py-4 px-4 border-4 border-gray-900 rounded-2xl shadow-lg text-base font-black text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 focus:outline-none focus:ring-4 focus:ring-indigo-500 transition-all hover:scale-105"
             >
               Create Account
               <ArrowRight className="ml-2 w-5 h-5" />
@@ -173,19 +237,17 @@ export default function Signup({ searchParams }: { searchParams: Message }) {
           </form>
 
           <div className="mt-6 text-center">
-            <p className="text-sm font-black text-gray-900 font-semibold">
+            <p className="text-sm font-black text-gray-900">
               Already have an account?{" "}
               <Link
                 href="/sign-in"
-                className="font-black text-gray-900 hover:text-indigo-200 transition-colors"
+                className="font-black text-indigo-600 hover:text-indigo-700"
               >
                 Sign in here
               </Link>
             </p>
           </div>
         </div>
-
-        {/* Trust Indicators */}
       </div>
     </div>
   );

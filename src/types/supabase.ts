@@ -53,14 +53,86 @@ export type Database = {
         }
         Relationships: []
       }
+      business_accounts: {
+        Row: {
+          business_name: string
+          created_at: string | null
+          employee_range: string | null
+          id: string
+          logo_url: string | null
+          owner_id: string | null
+          subdomain: string
+        }
+        Insert: {
+          business_name: string
+          created_at?: string | null
+          employee_range?: string | null
+          id?: string
+          logo_url?: string | null
+          owner_id?: string | null
+          subdomain: string
+        }
+        Update: {
+          business_name?: string
+          created_at?: string | null
+          employee_range?: string | null
+          id?: string
+          logo_url?: string | null
+          owner_id?: string | null
+          subdomain?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "business_accounts_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      business_employees: {
+        Row: {
+          business_id: string
+          id: string
+          joined_at: string
+          role: string
+          user_id: string
+        }
+        Insert: {
+          business_id: string
+          id?: string
+          joined_at?: string
+          role?: string
+          user_id: string
+        }
+        Update: {
+          business_id?: string
+          id?: string
+          joined_at?: string
+          role?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "business_employees_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "business_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       call_flows: {
         Row: {
           created_at: string | null
           description: string | null
-          flow_data: Json | null
+          flow_json: Json | null
           id: string
           name: string
-          phone_number_id: string | null
+          phone_number: string | null
+          recording_disclaimer: string | null
+          recording_enabled: boolean | null
           status: string | null
           updated_at: string | null
           user_id: string | null
@@ -68,10 +140,12 @@ export type Database = {
         Insert: {
           created_at?: string | null
           description?: string | null
-          flow_data?: Json | null
+          flow_json?: Json | null
           id?: string
           name: string
-          phone_number_id?: string | null
+          phone_number?: string | null
+          recording_disclaimer?: string | null
+          recording_enabled?: boolean | null
           status?: string | null
           updated_at?: string | null
           user_id?: string | null
@@ -79,23 +153,17 @@ export type Database = {
         Update: {
           created_at?: string | null
           description?: string | null
-          flow_data?: Json | null
+          flow_json?: Json | null
           id?: string
           name?: string
-          phone_number_id?: string | null
+          phone_number?: string | null
+          recording_disclaimer?: string | null
+          recording_enabled?: boolean | null
           status?: string | null
           updated_at?: string | null
           user_id?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "call_flows_phone_number_id_fkey"
-            columns: ["phone_number_id"]
-            isOneToOne: false
-            referencedRelation: "phone_numbers"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       call_logs: {
         Row: {
@@ -192,6 +260,47 @@ export type Database = {
           user_id?: string | null
         }
         Relationships: []
+      }
+      employee_invitations: {
+        Row: {
+          accepted_at: string | null
+          business_id: string
+          email: string
+          id: string
+          invited_at: string
+          invited_by: string | null
+          role: string
+          status: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          business_id: string
+          email: string
+          id?: string
+          invited_at?: string
+          invited_by?: string | null
+          role?: string
+          status?: string
+        }
+        Update: {
+          accepted_at?: string | null
+          business_id?: string
+          email?: string
+          id?: string
+          invited_at?: string
+          invited_by?: string | null
+          role?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_invitations_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "business_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       phone_numbers: {
         Row: {
@@ -407,48 +516,68 @@ export type Database = {
       }
       users: {
         Row: {
+          account_type: string | null
           avatar_url: string | null
+          business_id: string | null
           created_at: string
           credits: string | null
           email: string | null
+          employee_range: string | null
           full_name: string | null
           id: string
           image: string | null
           name: string | null
+          onboarding_complete: boolean | null
           subscription: string | null
           token_identifier: string
           updated_at: string | null
           user_id: string | null
         }
         Insert: {
+          account_type?: string | null
           avatar_url?: string | null
+          business_id?: string | null
           created_at?: string
           credits?: string | null
           email?: string | null
+          employee_range?: string | null
           full_name?: string | null
           id: string
           image?: string | null
           name?: string | null
+          onboarding_complete?: boolean | null
           subscription?: string | null
           token_identifier: string
           updated_at?: string | null
           user_id?: string | null
         }
         Update: {
+          account_type?: string | null
           avatar_url?: string | null
+          business_id?: string | null
           created_at?: string
           credits?: string | null
           email?: string | null
+          employee_range?: string | null
           full_name?: string | null
           id?: string
           image?: string | null
           name?: string | null
+          onboarding_complete?: boolean | null
           subscription?: string | null
           token_identifier?: string
           updated_at?: string | null
           user_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "users_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "business_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       webhook_events: {
         Row: {

@@ -176,6 +176,37 @@ export default function Dashboard() {
     getUser();
   }, []);
 
+  // Add this right after your existing useEffect that gets the user
+  // Around line 160 in your dashboard component
+
+  useEffect(() => {
+    const checkOnboardingStatus = async () => {
+      if (!user) return;
+
+      try {
+        const { data: userData, error } = await supabase
+          .from("users")
+          .select("onboarding_complete")
+          .eq("id", user.id)
+          .single();
+
+        if (error) {
+          console.error("Error checking onboarding:", error);
+          return;
+        }
+
+        // If onboarding is not complete, redirect to onboarding
+        if (!userData?.onboarding_complete) {
+          router.push("/onboarding");
+        }
+      } catch (err) {
+        console.error("Error in onboarding check:", err);
+      }
+    };
+
+    checkOnboardingStatus();
+  }, [user, router]);
+
   const fetchTwilioNumbers = async () => {
     setLoadingTwilio(true);
     try {
